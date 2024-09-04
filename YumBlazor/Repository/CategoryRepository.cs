@@ -17,6 +17,8 @@ namespace YumBlazor.Repository
         {
             _db.Categories.Add(category);
             await _db.SaveChangesAsync();
+
+            return category;
         }
 
         public async Task<bool> DeleteAsync(int id)
