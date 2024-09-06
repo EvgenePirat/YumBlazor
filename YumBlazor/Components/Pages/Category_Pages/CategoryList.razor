@@ -1,5 +1,12 @@
 ﻿@page "/category"
 @inject ICategoryRepository _categoryRepository
+@inject IJSRuntime _JS
+
+<BsModal OnModalConfirmation="ConfirmDeleteClick" 
+    ButtonBootstrapStyle="btn-danger" 
+    ButtonText="Delete" 
+    Title="Are you sure you want delete this Category?"
+/>
 
 @if (IsProcessing)
 {
@@ -47,7 +54,7 @@ else
                                     <a href="category/update/@category.Id" class="btn btn-primary">
                                         <i class="bi bi-pencil-square"></i>Edit
                                     </a>
-                                    <button class="btn btn-danger">
+                                    <button class="btn btn-danger" @onclick="() => HandleDelete(category.Id)">
                                         <i class="bi bi-trash3"></i>Delete
                                     </button>
                                 </td>
@@ -63,6 +70,7 @@ else
 @code {
     public bool IsProcessing { get; set; } = true;
     private IEnumerable<Category> Categories { get; set; } = new List<Category>();
+    private int DeleteCategoryID { get; set; } = 0;
 
     protected override Task OnInitializedAsync()
     {
@@ -82,6 +90,30 @@ else
     private async Task LoadCategories()
     {
         Categories = await _categoryRepository.GetAllAsync();
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        DeleteCategoryID = id;
+        await _JS.InvokeVoidAsync("ShowConfirmationModal");
+    }
+
+    private async Task ConfirmDeleteClick(bool isConfirmed)
+    {
+        IsProcessing = true;
+        await _JS.InvokeVoidAsync("HideConfirmationModal");
+        if(isConfirmed && DeleteCategoryID != 0)
+        {
+            var result = await _categoryRepository.DeleteAsync(DeleteCategoryID);
+            if (result)
+                _JS.ToastrSuccess("Category delete successfully");
+            else
+                _JS.ToastrSuccess("Error encountered while deleting");
+
+            await LoadCategories();
+        }
+        DeleteCategoryID = 0;
+        IsProcessing = false;
     }
 
 }
